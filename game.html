@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<style>
+		body{
+			background-color: #f0f0f0;
+		}
+		.container{
+			box-sizing: border-box;
+			padding: 20px;
+			border-radius: 5px;
+			background-color: #fff;
+			position: absolute;
+			left: 50%;
+			top: 50%;
+			transform: translate(-50%, -50%);
+		}
+		table{
+			border-collapse: collapse;
+			table-layout: fixed;
+			width: 90px;
+		}
+		table tr td{
+			border: 1px solid #e0e0e0;
+			width: 30px;
+			height: 30px;
+			overflow: hidden;
+			box-sizing: border-box;
+			text-align: center;
+		}
+		p{
+			line-height: 1.5em;
+			margin: 0;
+		}
+		input{
+			border: none;
+			border-bottom: 1px solid #e0e0e0;
+			padding: 0.5em;
+			width: 10em;
+		}
+		input:focus{
+			outline: none;
+		}
+		[v-cloak] {
+		  display: none;
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<div id="gameConfig">
+			<h3>设置</h3>
+			<div>
+				行数：<input placeholder="请输入不大于30的行数" type="text" v-model="chessBoardLength">
+				<select v-model="winLength">
+					<option value="3">3</option>
+					<option value="4">4</option>
+					<option value="5">5</option>
+				</select>
+				子棋
+				<button v-on:click="play=!play">开始</button>
+				<game-body>
+				</game-body>
+			</div>
+		</div>
+	</div>
+	<script type="text/x-template" id="game-body">
+		<div id="gameBody">
+			<p v-cloak>下子方：{{conver(count)}}</p>
+			<table id="">
+				<tr v-for="(row, i) in rows">
+					<td v-cloak v-on:click="drop(i, j)" v-for="(item, j) in row">{{conver(item)}}</td>
+				</tr>
+			</table>
+		</div>
+	</script>
+	<script src="vue.js"></script>
+	<script>
+		var config = new Vue({
+			el: '#gameConfig',
+			data: {
+				chessBoardLength: 5,
+				winLength: 3
+			}
+		});
+
+		Vue.component('game-body',{
+			template: '#game-body',
+			props: {
+				model: Object
+			},
+			data: function(){
+				var rows = createArray(10);
+				return {
+					rows: rows,
+					count: 0,
+					mode: 5,
+					length: 10
+				};
+			},
+			methods: {
+				drop: function(i, j){
+					if(this.rows[i][j] === null){
+						this.rows[i][j] = this.count % 2;
+						this.count++;
+						this.checkWinner(i, j);
+					}
+				},
+				conver: function(item){
+					if(item === null){
+						return;
+					}
+					return item % 2 === 0? 'X': 'O';
+				},
+				checkWinner: function(row, col){
+					if(this.check(this.rows, row, col, this.mode)){
+						alert(this.conver(this.count - 1) + '获得胜利');
+					}else{
+						if(this.count === this.length * this.length){
+							alert('不分胜负');
+						}
+					}
+				},
+				check: function(item, row, col, len){
+					var reg = new RegExp("(\\S)\\1{" + (len-1) + ",}");
+					var temp = item[row][col] + '';
+					var i;
+					//横向判断
+					for(i = 1; i < len; i++){
+						if(checkNull(item,row - i,col)){
+							temp = item[row-i][col] + temp;
+						}else{
+							break;
+						}
+					}
+					for(i = 1; i < len; i++){
+						if(checkNull(item,row + i,col)){
+							temp += item[row+i][col];
+						}else{
+							break;
+						}
+					}
+					if(reg.test(temp)){
+						return true;
+					}
+					//重置
+					temp = item[row][col]  + '';
+					//纵向判断
+					for(i = 1; i < len; i++){
+						if(checkNull(item, row, col - i)){
+							temp = item[row][col-i] + temp;
+						}else{
+							break;
+						}
+					}
+					for(i = 1; i < len; i++){
+						if(checkNull(item, row, col + i)){
+							temp += item[row][col+i];
+						}else{
+							break;
+						}
+					}
+					if(reg.test(temp)){
+						return true;
+					}
+					//重置
+					temp = item[row][col]  + '';
+					//135度角判断
+					for(i = 1; i < len; i++){
+						if(checkNull(item, row - i, col - i)){
+							temp = item[row-i][col-i] + temp;
+						}else{
+							break;
+						}
+					}
+					for(i = 1; i < len; i++){
+						if(checkNull(item, row + i, col + i)){
+							temp += item[row+i][col-i];
+						}else{
+							break;
+						}
+					}
+					if(reg.test(temp)){
+						return true;
+					}
+					//重置
+					temp = item[row][col]  + '';
+					//45度角判断
+					for(i = 1; i < len; i++){
+						if(checkNull(item, row - i, col + i)){
+							temp = item[row-i][col+i] + temp;
+						}else{
+							break;
+						}
+					}
+					for(i = 1; i < len; i++){
+						if(checkNull(item, row + i, col - i)){
+							temp += item[row+i][col+i];
+						}else{
+							break;
+						}
+					}
+					if(reg.test(temp)){
+						return true;
+					}else{
+						return false;
+					}
+				}
+			}
+		});
+
+		function checkNull(item, row, col){
+			if(typeof item[row] === 'undefined' || item[row] === null){
+				return false
+			}
+			if(typeof item[row][col] === 'undefined' || item[row][col] === null){
+				return false;
+			}
+			return true;
+		}
+		function createArray(len){
+			var rows = new Array();
+			for (var i = 0; i < len; i++) {
+				rows[i] = new Array();
+				for (var j = 0; j < len; j++){
+					rows[i][j] = null;
+				}
+			}
+			return rows;
+		}
+	</script>
+</body>
+</html>
