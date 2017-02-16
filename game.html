@@ -7,16 +7,6 @@
 		body{
 			background-color: #f0f0f0;
 		}
-		.container{
-			box-sizing: border-box;
-			padding: 20px;
-			border-radius: 5px;
-			background-color: #fff;
-			position: absolute;
-			left: 50%;
-			top: 50%;
-			transform: translate(-50%, -50%);
-		}
 		table{
 			border-collapse: collapse;
 			table-layout: fixed;
@@ -43,8 +33,24 @@
 		input:focus{
 			outline: none;
 		}
-		[v-cloak] {
-		  display: none;
+		.container{
+			box-sizing: border-box;
+			padding: 20px;
+			border-radius: 5px;
+			background-color: #fff;
+			position: absolute;
+			left: 50%;
+			top: 50%;
+			transform: translate(-50%, -50%);
+		}
+		.game-body{
+			margin-top: 20px;
+		}
+		.error{
+			position: absolute;
+			font-size: 12px;
+			margin: 0;
+			color: red;
 		}
 	</style>
 </head>
@@ -53,21 +59,25 @@
 		<div id="gameConfig">
 			<h3>设置</h3>
 			<div>
-				行数：<input placeholder="请输入不大于30的行数" type="text" v-model="chessBoardLength">
+				行数：<input placeholder="请输入棋盘的行数" type="text" v-model="chessBoardLength">
 				<select v-model="winLength">
-					<option value="3">3</option>
-					<option value="4">4</option>
-					<option value="5">5</option>
+					<option>3</option>
+					<option>4</option>
+					<option>5</option>
 				</select>
 				子棋
-				<button v-on:click="play=!play">开始</button>
-				<game-body>
+				<button v-on:click="togglePlay">{{ playStatus }}</button>
+				<p class="error" v-show="!validate">只能输入数字哦</p>
+				<game-body :board-length="chessBoardLength"
+						   :win-len="winLength"
+						   :is-play="play"
+						   v-on:cc="togglePlay">
 				</game-body>
 			</div>
 		</div>
 	</div>
 	<script type="text/x-template" id="game-body">
-		<div id="gameBody">
+		<div id="gameBody" class="game-body">
 			<p v-cloak>下子方：{{conver(count)}}</p>
 			<table id="">
 				<tr v-for="(row, i) in rows">
@@ -78,30 +88,28 @@
 	</script>
 	<script src="vue.js"></script>
 	<script>
-		var config = new Vue({
-			el: '#gameConfig',
-			data: {
-				chessBoardLength: 5,
-				winLength: 3
-			}
-		});
-
 		Vue.component('game-body',{
 			template: '#game-body',
-			props: {
-				model: Object
-			},
+			props:['boardLength', 'winLen', 'isPlay'],
 			data: function(){
-				var rows = createArray(10);
 				return {
-					rows: rows,
+					rows: createArray(12),
 					count: 0,
 					mode: 5,
-					length: 10
+					play: false,
+					length: 15
 				};
+			},
+			watch: {
+				isPlay: function(play){
+					play && this.reset();
+				}
 			},
 			methods: {
 				drop: function(i, j){
+					if(!this.isPlay){
+						return false;
+					}
 					if(this.rows[i][j] === null){
 						this.rows[i][j] = this.count % 2;
 						this.count++;
@@ -114,12 +122,20 @@
 					}
 					return item % 2 === 0? 'X': 'O';
 				},
+				reset: function(){
+					this.rows = createArray(this.boardLength);
+					this.count = 0;
+					this.mode = this.winLen;
+					this.length = this.boardLength;
+				},
 				checkWinner: function(row, col){
 					if(this.check(this.rows, row, col, this.mode)){
 						alert(this.conver(this.count - 1) + '获得胜利');
+							this.$emit('cc', false);
 					}else{
 						if(this.count === this.length * this.length){
 							alert('不分胜负');
+							this.$emit('cc', false);
 						}
 					}
 				},
@@ -207,9 +223,44 @@
 					}else{
 						return false;
 					}
+				},
+
+			}
+		});
+		var config = new Vue({
+			el: '#gameConfig',
+			data: {
+				chessBoardLength: 10,
+				winLength: 4,
+				play: false
+			},
+			methods:{
+				togglePlay: function(){
+					if(!this.validate){
+						return;
+					}
+					this.play = !this.play;
+					if (this.play) {
+						alert('游戏开始');
+					}else{
+						alert('游戏结束');
+					}
+				}
+			},
+			computed: {
+				playStatus: function(){
+					return !this.play ? '游戏开始' : '结束游戏';
+				},
+				validate: function(){
+					var reg = /\D/;
+					if(reg.test(this.chessBoardLength)){
+						return false;
+					}
+					return true;
 				}
 			}
 		});
+
 
 		function checkNull(item, row, col){
 			if(typeof item[row] === 'undefined' || item[row] === null){
