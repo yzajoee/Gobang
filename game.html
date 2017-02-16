@@ -67,7 +67,10 @@
 				</select>
 				子棋
 				<button v-on:click="togglePlay">{{ playStatus }}</button>
-				<p class="error" v-show="!validate">只能输入数字哦</p>
+				<div class="error">
+					<p v-show="!validate">只能输入数字哦</p>
+					<p v-show="Number(chessBoardLength) > 50">骚年，棋盘是不是设置得太大了？</p>
+				</div>
 				<game-body :board-length="chessBoardLength"
 						   :win-len="winLength"
 						   :is-play="play"
@@ -213,7 +216,7 @@
 					}
 					for(i = 1; i < len; i++){
 						if(checkNull(item, row + i, col - i)){
-							temp += item[row+i][col+i];
+							temp += item[row+i][col-i];
 						}else{
 							break;
 						}
